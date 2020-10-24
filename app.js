@@ -1,5 +1,5 @@
 // @TODO: YOUR CODE HERE!
-var width= parseInt(d3.select("scatter").style("width"));
+var width= parseInt(d3.select("#scatter").style("width"));
 
 var height=width- width/4;
 
@@ -12,7 +12,7 @@ var tpadbot=40;
 var tpadleft=40;
 
 var svg= d3
-    .select("scatter")
+    .select("#scatter")
     .append("svg")
     .attr("width",width)
     .attr("height", height)
@@ -32,9 +32,9 @@ crGet();
 //nest for bottom axis labels
 svg.append("g").attr("class", "xText")
 
-var xText=d3.select("xText");
+var xText=d3.select(".xText");
 
-//append poverty to the svg files
+//append pover  ty to the svg files
 
     xText
     .append("text")
@@ -49,16 +49,63 @@ var leftTextY= (height +labelArea) /2- labelArea;
 
 svg.append("g").attr("class","yText");
 
-var ytext= d3.select("ytext");
+var ytext= d3.select(".ytext");
 
 ytext
 .append("text")
-.attr("y")
+.attr("y",0)
 .attr("data-name", "healthcare")
 .attr("data-axis", "y")
 .attr("class", "axis-text")
 .text("Lacks HealthCare", "%");
 
+var chartGroup = svg.append("g")
+  .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+var chosenXAxis = "poverty";
+function  xScale(data, chosenXaxis){
+     // create scales
+  var xLinearScale = d3.scaleLinear()
+  .domain([d3.min(data, d => d[chosenXAxis]) * 0.8,
+    d3.max(data, d => d[chosenXAxis]) * 1.2
+  ])
+  .range([0, width]);
+
+return xLinearScale;
+
+
+}
+function updateToolTip(chosenXAxis, circlesGroup) {
+
+    var label;
+  
+    if (chosenXAxis === "poverty") {
+      label = "poverty:";
+    }
+    //else {
+    //  label = "# of Albums:";
+    //}
+  
+    var toolTip = d3.tip()
+      .attr("class", "tooltip")
+      .offset([80, -60])
+      .html(function(d) {
+        return (`${d.healthcare}<br>${label} ${d[chosenXAxis]}`);
+      });
+  
+    circlesGroup.call(toolTip);
+  
+    circlesGroup.on("mouseover", function(data) {
+      toolTip.show(data);
+    })
+      // onmouseout event
+      .on("mouseout", function(data, index) {
+        toolTip.hide(data);
+      });
+  
+    return circlesGroup;
+  }
+  
 d3.csv("assets/data/data.csv").then(function(data,err){
     if (err) throw err;
 
@@ -85,11 +132,11 @@ d3.csv("assets/data/data.csv").then(function(data,err){
     .call(leftAxis);
 
     var circlesGroup = chartGroup.selectAll("circle")
-    .data(Data)
+    .data(data)
     .enter()
     .append("circle")
-    .attr("bx", d => xLinearScale(d[chosenXAxis]))
-    .attr("by", d => yLinearScale(d.num_hits))
+    .attr("cx", d => xLinearScale(d[chosenXAxis]))
+    .attr("cy", d => yLinearScale(d.healthcare))
     .attr("r", 20)
     .attr("fill", "blue")
     .attr("opacity", ".5");
@@ -98,10 +145,8 @@ d3.csv("assets/data/data.csv").then(function(data,err){
     .attr("transform", `translate(${width / 2}, ${height + 20})`);
 
     var circlesGroup = updateToolTip(chosenXAxis, circlesGroup);  
-
-
-
-}).catch(function(error) {
-    console.log(error);
+})
+    .catch(function(error) {
+        console.log(error);
   });
   
